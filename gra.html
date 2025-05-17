@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>ARCANOID GAME</title>
+  <style>
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      min-height: 100vh;
+      min-width: 100vw;
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #080d1d radial-gradient(ellipse at 50% 40%, #101c3b 60%, #080d1d 100%);
+      color: #d2f9ff;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+
+    .main-center-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+      z-index: 2;
+    }
+
+    .arcanoid-title {
+      font-family: 'Orbitron', 'Segoe UI', Arial, sans-serif;
+      font-size: 64px;
+      letter-spacing: 8px;
+      font-weight: 900;
+      color: #002fff;
+      margin-bottom: 32px;
+      margin-top: 0;
+      text-align: center;
+      text-transform: uppercase;
+      text-shadow:
+        0 0 40px #00fff7cc,
+        0 0 160px #00fff7cc,
+        0 0 4px #fff,
+        0 3px 16px #00fff7cc,
+        0 2px #00fff7cc,
+        0 -1px 4px #fff;
+      filter: brightness(1.4) drop-shadow(0 0 10px #00fff7cc);
+      user-select: none;
+      pointer-events: none;
+      z-index: 9;
+    }
+
+    .game-container {
+      display: flex;
+      z-index: 3;
+      box-shadow: 0 0 40px #00fff7cc, 0 0 0 8px #1099ff10, 0 0 80px #00cfff30;
+      border-radius: 18px;
+      background: rgba(8,18,36,0.7);
+      border: 2.5px solid #00fff7cc;
+      backdrop-filter: blur(1.7px);
+    }
+
+    canvas {
+      background: #0e182f;
+      border: 3px solid #00f6ff;
+      border-radius: 12px;
+      box-shadow: 0 0 48px #00f6ff70, 0 0 12px #43f3ff80;
+      position: relative;
+      z-index: 2;
+      margin: 16px 0 16px 0;
+    }
+
+    .sidebar, .legend {
+      width: 210px;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      background: rgba(15, 28, 54, 0.90);
+      border: 2.5px solid #00e0fa;
+      margin: 16px 10px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px #00e0fa60, 0 0 60px #00f6ff40;
+      color: #deffff;
+      min-height: 560px;
+      font-size: 18px;
+      text-shadow: 0 0 10px #00f6ff, 0 0 4px #fff, 0 0 1px #00fff7;
+    }
+
+    .legend {
+      background: rgba(11, 24, 48, 0.85);
+      border: 2.5px solid #3ffcff;
+      color: #b6f7ff;
+      font-size: 17px;
+      min-height: 560px;
+      box-shadow: 0 0 16px #00e0fa40;
+    }
+
+    .stats, .legend {
+      font-size: 17px;
+    }
+    .stats span, .legend div {
+      margin-bottom: 13px;
+      font-weight: 600;
+      background: rgba(0,255,255,0.08);
+      padding: 7px;
+      border-radius: 8px;
+      box-shadow: 0 0 6px #00fff933, 0 0 2px #fff, 0 0 1px #00fff7;
+      color: #e3fcff;
+      letter-spacing: .5px;
+      text-shadow: 0 0 8px #00f6ff, 0 0 2px #fff;
+    }
+
+    .legend .color-box {
+      width: 18px;
+      height: 18px;
+      display: inline-block;
+      margin-right: 8px;
+      border-radius: 4px;
+      border: 2px solid #fff;
+      box-shadow: 0 0 8px #00f6ffd0, 0 0 1px #fff;
+      vertical-align: middle;
+    }
+    .legend .color-box.powerup {
+      border: 2.5px solid #0ff;
+      box-shadow: 0 0 12px #0ff, 0 0 2px #fff;
+    }
+    .legend .color-box.powerdown {
+      border: 2.5px solid #f0f;
+      box-shadow: 0 0 12px #f0f, 0 0 2px #fff;
+    }
+
+    .controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+    }
+    .controls button {
+      background: rgba(0,255,255,0.15);
+      border: 2px solid #00f6ff;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-right: 10px;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 8px #00f6ff70;
+      padding: 2px 5px;
+    }
+    .controls button:hover {
+      background: #00f6ff20;
+      box-shadow: 0 0 16px #00f6ff;
+    }
+    .controls img {
+      width: 32px;
+      height: 32px;
+      filter: drop-shadow(0 0 8px #00f6ff) drop-shadow(0 0 1px #fff) invert(100%);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); text-shadow: 0 0 10px #00fff7; }
+      50% { transform: scale(1.18); text-shadow: 0 0 40px #00fff7, 0 0 120px #00fff7; }
+      100% { transform: scale(1); text-shadow: 0 0 10px #00fff7; }
+    }
+    @keyframes winpulse {
+      0% { transform: scale(1); text-shadow: 0 0 20px #00FFF6; }
+      50% { transform: scale(1.13); text-shadow: 0 0 50px #00FFF6; }
+      100% { transform: scale(1); text-shadow: 0 0 20px #00FFF6; }
+    }
+
+    .game-over-text {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 50px;
+      font-weight: bold;
+      color: rgb(255, 0, 0);
+      animation: pulse 1.6s infinite;
+      pointer-events: none;
+      display: none;
+      z-index: 110;
+      text-align: center;
+      letter-spacing: 2px;
+      text-shadow: 0 0 36px rgb(255, 0, 0), 0 0 2px #fff, 0 0 1px #00fff7;
+    }
+    .win-text {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -56%);
+      font-size: 56px;
+      font-weight: bold;
+      color: #00FFF6;
+      animation: winpulse 1.6s infinite;
+      pointer-events: none;
+      display: none;
+      z-index: 111;
+      text-align: center;
+      letter-spacing: 2px;
+      text-shadow: 0 0 28px #00FFF6, 0 0 2px #fff, 0 0 1px #00fff7;
+      line-height: 1.1;
+    }
+    .win-score {
+      font-size: 32px;
+      color: #fff;
+      margin-top: 20px;
+      display: block;
+      text-shadow: 0 0 18px #00FFF6, 0 0 2px #fff;
+      font-weight: 600;
+    }
+
+    .win-btn {
+      background: linear-gradient(90deg,#00f6ff,#9effff 60%,#00f6ff);
+      color: #002628;
+      font-weight: bold;
+      font-size: 13px;
+      border: none;
+      border-radius: 7px;
+      padding: 3px 10px;
+      margin: 0;
+      box-shadow: 0 0 4px #00f6ff80;
+      cursor: pointer;
+      transition: transform 0.14s, box-shadow 0.14s;
+      z-index: 130;
+      position: absolute;
+      top: 10px;
+      right: 16px;
+    }
+    .win-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 10px #00f6ff;
+      color: #111;
+    }
+
+    #fireworksBg {
+      position: fixed;
+      z-index: 1;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      display: none;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css?family=Orbitron:900&display=swap" rel="stylesheet">
+</head>
+<body>
+<canvas id="fireworksBg"></canvas>
+<div class="controls">
+  <button onclick="togglePause()">
+    <img id="pauseIcon" src="https://cdn-icons-png.flaticon.com/512/64/64595.png" alt="Pause">
+  </button>
+  <button onclick="toggleMusic()">
+    <img id="musicIcon" src="https://cdn-icons-png.flaticon.com/512/727/727245.png" alt="Music">
+  </button>
+</div>
+<button class="win-btn" onclick="simulateWin()">Wygrana</button>
+
+<div class="main-center-wrapper">
+  <div class="arcanoid-title">ARCANOID GAME</div>
+  <div class="game-container">
+    <div class="legend">
+      <div><span class="color-box" style="background:#FFA500"></span> Zwykła cegiełka (1 trafienie)</div>
+      <div><span class="color-box" style="background:#FF0000"></span> Specjalna cegiełka (2 trafienia)</div>
+      <div><span class="color-box" style="background:#FF8888"></span> Uszkodzona czerwona cegiełka</div>
+      <div><span class="color-box" style="background:#999"></span> Cegiełka niezniszczalna</div>
+      <div><span class="color-box powerup" style="background:#00FFFF"></span> Powiększenie paletki</div>
+      <div><span class="color-box powerdown" style="background:#FF00FF"></span> Zmniejszenie paletki</div>
+    </div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div class="sidebar">
+      <div class="stats">
+        <span id="scoreDisplay">Wynik: 0</span> <br><br>
+        <span id="livesDisplay">Życia: 3</span> <br><br>
+        <span id="ballsDisplay">Liczba piłek: 1</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="gameOverText" class="game-over-text">KONIEC GRY</div>
+<div id="winText" class="win-text">
+  WYGRAŁEŚ!<br>
+  <span class="win-score" id="finalScore"></span>
+</div>
+
+<audio id="backgroundMusic" loop>
+  <source src="tlo.mp3" type="audio/mpeg">
+</audio>
+<audio id="plumSound">
+  <source src="sound.mp3" type="audio/mpeg">
+</audio>
+<audio id="gameOverSound">
+  <source src="go.mp3" type="audio/mpeg">
+</audio>
+<audio id="powerupSound">
+  <source src="powerup.mp3" type="audio/mpeg">
+</audio>
+<audio id="powerdownSound">
+  <source src="powerdown.mp3" type="audio/mpeg">
+</audio>
+<audio id="winSound">
+  <source src="win.mp3" type="audio/mpeg">
+</audio>
+<audio id="winMusic">
+  <source src="koniec.mp3" type="audio/mpeg">
+</audio><script>
+const fireworksBg = document.getElementById("fireworksBg");
+const fCtx = fireworksBg.getContext("2d");
+let fireworksActive = false;
+let fireworks = [];
+let fireworksTimer = null;
+
+function resizeFireworksCanvas() {
+  fireworksBg.width = window.innerWidth;
+  fireworksBg.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeFireworksCanvas);
+
+function FireworkParticle(x, y, color, angle, speed) {
+  this.x = x;
+  this.y = y;
+  this.color = color;
+  this.angle = angle;
+  this.speed = speed * (0.9 + Math.random()*0.3);
+  this.radius = 2 + Math.random()*1.8;
+  this.velX = Math.cos(angle) * this.speed;
+  this.velY = Math.sin(angle) * this.speed;
+  this.alpha = 1;
+  this.decay = 0.012 + Math.random() * 0.012;
+  this.gravity = 0.037 + Math.random()*0.008;
+}
+FireworkParticle.prototype.update = function() {
+  this.x += this.velX;
+  this.y += this.velY;
+  this.velY += this.gravity;
+  this.alpha -= this.decay;
+};
+FireworkParticle.prototype.draw = function(ctx) {
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, this.alpha);
+  ctx.beginPath();
+  ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+  ctx.fillStyle = this.color;
+  ctx.shadowColor = this.color;
+  ctx.shadowBlur = 18;
+  ctx.fill();
+  ctx.restore();
+};
+
+function launchFireworkBg() {
+  const w = fireworksBg.width;
+  const h = fireworksBg.height;
+  const x = 80 + Math.random() * (w - 160);
+  const y = 100 + Math.random() * (h/2 - 100);
+  const colors = [
+    "#00fff7", "#43f3ff", "#00e0fa", "#00cfff", "#fff", "#b6f7ff", "#3ffcff", "#00fff0"
+  ];
+  const color = colors[Math.floor(Math.random()*colors.length)];
+  const count = 24 + Math.floor(Math.random()*14);
+  for (let i = 0; i < count; i++) {
+    const angle = (2 * Math.PI * i) / count;
+    fireworks.push(new FireworkParticle(x, y, color, angle, 3.7 + Math.random()*1.6));
+  }
+}
+
+function drawFireworksBg() {
+  if (!fireworksActive) return;
+  fCtx.globalAlpha = 0.12;
+  fCtx.fillStyle = "#020613";
+  fCtx.fillRect(0, 0, fireworksBg.width, fireworksBg.height);
+  fCtx.globalAlpha = 1.0;
+  for (let i = fireworks.length-1; i>=0; i--) {
+    const p = fireworks[i];
+    p.update();
+    p.draw(fCtx);
+    if (p.alpha <= 0.05) fireworks.splice(i, 1);
+  }
+  requestAnimationFrame(drawFireworksBg);
+}
+
+function startFireworksBg() {
+  resizeFireworksCanvas();
+  fireworksActive = true;
+  fireworksBg.style.display = "block";
+  fireworks = [];
+  for(let i=0;i<5;i++) setTimeout(launchFireworkBg, 100*i);
+  fireworksTimer = setInterval(launchFireworkBg, 520);
+  drawFireworksBg();
+}
+
+function stopFireworksBg() {
+  fireworksActive = false;
+  fireworksBg.style.display = "none";
+  fireworks = [];
+  if (fireworksTimer) clearInterval(fireworksTimer);
+  fireworksTimer = null;
+}
+
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const ballRadius = 8;
+const paddleHeight = 10;
+let paddleWidth = 100;
+let paddleX = (canvas.width - paddleWidth) / 2;
+let rightPressed = false;
+let leftPressed = false;
+
+const brickRowCount = 10;
+const brickColumnCount = 15;
+const brickWidth = 48;
+const brickHeight = 18;
+const brickPadding = 4;
+const brickOffsetTop = 30;
+const brickOffsetLeft = 20;
+
+const bricks = [];
+const shineOffsets = [];
+
+let score = 0;
+let lives = 3;
+let isPaused = false;
+let gameOver = false;
+let gameWon = false;
+
+const balls = [
+  { x: canvas.width/2, y: canvas.height-30, dx: 3, dy: -3, type: "normal" }
+];
+
+const bgMusic = document.getElementById("backgroundMusic");
+const plumSound = document.getElementById("plumSound");
+const gameOverSound = document.getElementById("gameOverSound");
+const powerupSound = document.getElementById("powerupSound");
+const powerdownSound = document.getElementById("powerdownSound");
+const winSound = document.getElementById("winSound");
+const winMusic = document.getElementById("winMusic");
+
+bgMusic.volume = 0.07;
+winMusic.volume = 0.13;
+winSound.volume = 0.18;
+plumSound.volume = 0.13;
+gameOverSound.volume = 0.13;
+powerupSound.volume = 0.13;
+powerdownSound.volume = 0.13;
+let musicPlaying = false;
+
+let powerups = [];
+let brickHits = 0;
+const POWERUP_DROP_INTERVAL = 50;
+const POWERDOWN_DROP_INTERVAL = 50;
+const POWERUP_TYPE_PADDLE = "paddle_wide";
+const POWERDOWN_TYPE_PADDLE = "paddle_narrow";
+const POWERUP_WIDTH = 28;
+const POWERUP_HEIGHT = 16;
+const POWERUP_COLOR = "#00FFFF";
+const POWERDOWN_COLOR = "#FF00FF";
+const PADDLE_MAX_WIDTH = 220;
+const PADDLE_MIN_WIDTH = 40;
+let paddleWideTimeout = null;
+let paddleNarrowTimeout = null;
+
+function drawPowerups() {
+  for (const p of powerups) {
+    ctx.save();
+    ctx.globalAlpha = 0.94;
+    ctx.beginPath();
+    ctx.rect(p.x, p.y, POWERUP_WIDTH, POWERUP_HEIGHT);
+    if (p.type === POWERUP_TYPE_PADDLE) {
+      ctx.fillStyle = POWERUP_COLOR;
+      ctx.shadowColor = "#0ff";
+    } else if (p.type === POWERDOWN_TYPE_PADDLE) {
+      ctx.fillStyle = POWERDOWN_COLOR;
+      ctx.shadowColor = "#f0f";
+    }
+    ctx.shadowBlur = 15;
+    ctx.fill();
+    ctx.closePath();
+
+    ctx.beginPath();
+    if (p.type === POWERUP_TYPE_PADDLE) {
+      ctx.moveTo(p.x + POWERUP_WIDTH/2 - 8, p.y + 10);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2, p.y + 3);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2 + 8, p.y + 10);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2 + 5, p.y + 10);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2 + 5, p.y + 13);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2 - 5, p.y + 13);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2 - 5, p.y + 10);
+      ctx.closePath();
+      ctx.fillStyle = "#222";
+    } else if (p.type === POWERDOWN_TYPE_PADDLE) {
+      ctx.moveTo(p.x + POWERUP_WIDTH/2 + 8, p.y + 10);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2, p.y + 3);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2 - 8, p.y + 10);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2 - 5, p.y + 10);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2 - 5, p.y + 13);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2 + 5, p.y + 13);
+      ctx.lineTo(p.x + POWERUP_WIDTH/2 + 5, p.y + 10);
+      ctx.closePath();
+      ctx.fillStyle = "#222";
+    }
+    ctx.shadowBlur = 0;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function checkPowerupCollision() {
+  for (let i = powerups.length - 1; i >= 0; i--) {
+    const p = powerups[i];
+    if (
+      p.y + POWERUP_HEIGHT >= canvas.height - paddleHeight &&
+      p.x + POWERUP_WIDTH > paddleX &&
+      p.x < paddleX + paddleWidth
+    ) {
+      activatePowerup(p.type);
+      if (p.type === POWERUP_TYPE_PADDLE) {
+        powerupSound.currentTime = 0;
+        powerupSound.play();
+      } else if (p.type === POWERDOWN_TYPE_PADDLE) {
+        powerdownSound.currentTime = 0;
+        powerdownSound.play();
+      }
+      powerups.splice(i, 1);
+    }
+    else if (p.y > canvas.height) {
+      powerups.splice(i, 1);
+    }
+  }
+}
+
+function activatePowerup(type) {
+  if (type === POWERUP_TYPE_PADDLE) {
+    if (paddleWidth < PADDLE_MAX_WIDTH) {
+      paddleWidth += 20;
+      if (paddleWidth > PADDLE_MAX_WIDTH) paddleWidth = PADDLE_MAX_WIDTH;
+    }
+    if (paddleWideTimeout) clearTimeout(paddleWideTimeout);
+    paddleWideTimeout = setTimeout(() => {
+      paddleWidth = 100;
+      paddleWideTimeout = null;
+    }, 15000);
+  }
+  if (type === POWERDOWN_TYPE_PADDLE) {
+    if (paddleWidth > PADDLE_MIN_WIDTH) {
+      paddleWidth -= 20;
+      if (paddleWidth < PADDLE_MIN_WIDTH) paddleWidth = PADDLE_MIN_WIDTH;
+    }
+    if (paddleNarrowTimeout) clearTimeout(paddleNarrowTimeout);
+    paddleNarrowTimeout = setTimeout(() => {
+      paddleWidth = 100;
+      paddleNarrowTimeout = null;
+    }, 15000);
+  }
+}
+
+function toggleMusic() {
+  const icon = document.getElementById("musicIcon");
+  if (musicPlaying) {
+    bgMusic.pause();
+    icon.src = "https://cdn-icons-png.flaticon.com/512/727/727245.png";
+  } else {
+    bgMusic.play();
+    icon.src = "https://cdn-icons-png.flaticon.com/512/727/727240.png";
+  }
+  musicPlaying = !musicPlaying;
+}
+
+function togglePause() {
+  isPaused = !isPaused;
+  if (!isPaused && !gameOver && !gameWon) draw();
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
+  else if (e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
+});
+document.addEventListener("keyup", e => {
+  if (e.key === "Right" || e.key === "ArrowRight") rightPressed = false;
+  else if (e.key === "Left" || e.key === "ArrowLeft") leftPressed = false;
+});
+
+for (let c = 0; c < brickColumnCount; c++) {
+  bricks[c] = [];
+  shineOffsets[c] = [];
+  for (let r = 0; r < brickRowCount; r++) {
+    let type = "normal";
+    if ((c + r) % 7 === 0) type = "red";
+    if ((c + r) % 11 === 0) type = "indestructible";
+    let color = type === "normal" ? "#FFA500" : type === "red" ? "#FF0000" : "#999";
+    let hits = type === "red" ? 2 : (type === "indestructible" ? Infinity : 1);
+    bricks[c][r] = { status: 1, x: 0, y: 0, color, hits, type };
+    shineOffsets[c][r] = Math.random() * brickWidth;
+  }
+}
+
+const particles = [];
+
+function createParticles(x, y, color) {
+  for (let i = 0; i < 5; i++) {
+    particles.push({
+      x, y,
+      dx: (Math.random() - 0.5) * 2,
+      dy: (Math.random() - 0.5) * 2,
+      life: 20,
+      color
+    });
+  }
+}
+
+function drawParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+    ctx.closePath();
+
+    p.x += p.dx;
+    p.y += p.dy;
+    p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawBall(ball) {
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+  ctx.fillStyle = ball.type === "normal" ? "#FFDD00" : "#FF69B4";
+  ctx.shadowColor = "#00FFF6";
+  ctx.shadowBlur = 10;
+  ctx.fill();
+  ctx.closePath();
+}
+
+function drawPaddle() {
+  const gradient = ctx.createLinearGradient(paddleX, canvas.height - paddleHeight, paddleX + paddleWidth, canvas.height);
+  const time = Date.now() * 0.002;
+  const colors = [
+    `hsl(${(time*60)%360},100%,70%)`,
+    `hsl(${(time*60 + 60)%360},100%,65%)`,
+    `hsl(${(time*60 + 120)%360},100%,60%)`,
+    `hsl(${(time*60 + 180)%360},100%,70%)`
+  ];
+  gradient.addColorStop(0, colors[0]);
+  gradient.addColorStop(0.33, colors[1]);
+  gradient.addColorStop(0.66, colors[2]);
+  gradient.addColorStop(1, colors[3]);
+
+  ctx.beginPath();
+  ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+  ctx.shadowColor = "#00FFF6";
+  ctx.shadowBlur = 14;
+  ctx.fillStyle = gradient;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.closePath();
+}
+
+function drawBricks() {
+  for (let c = 0; c < brickColumnCount; c++) {
+    for (let r = 0; r < brickRowCount; r++) {
+      const b = bricks[c][r];
+      if (b.status > 0) {
+        const brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+        const brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+        b.x = brickX;
+        b.y = brickY;
+
+        const gradient = ctx.createLinearGradient(brickX, brickY, brickX + brickWidth, brickY);
+        const offset = (shineOffsets[c][r] + Date.now() * 0.04) % brickWidth;
+        let baseColor = b.color;
+        if (b.type === "red" && b.hits === 1) baseColor = "#FF8888";
+        gradient.addColorStop(0, baseColor);
+        gradient.addColorStop(offset / brickWidth, "#FFFFFF");
+        gradient.addColorStop(Math.min(1, (offset + 10) / brickWidth), baseColor);
+        ctx.fillStyle = gradient;
+
+        ctx.beginPath();
+        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+        ctx.shadowColor = b.type === "indestructible" ? "#00fff7" : "#00f6ff";
+        ctx.shadowBlur = b.type === "indestructible" ? 16 : 9;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.closePath();
+      }
+    }
+  }
+}
+
+function updateStats() {
+  document.getElementById("scoreDisplay").textContent = "Wynik: " + score;
+  document.getElementById("livesDisplay").textContent = "Życia: " + lives;
+  document.getElementById("ballsDisplay").textContent = "Liczba piłek: " + balls.length;
+}
+
+function areBreakableBricksLeft() {
+  for (let c = 0; c < brickColumnCount; c++) {
+    for (let r = 0; r < brickRowCount; r++) {
+      const b = bricks[c][r];
+      if (b.status > 0 && b.type !== "indestructible") return true;
+    }
+  }
+  return false;
+}
+
+function drawWin() {
+  gameWon = true;
+  document.getElementById("winText").style.display = "block";
+  document.getElementById("finalScore").textContent = `Twój wynik: ${score}`;
+  if (winSound) winSound.play();
+  if (winMusic) {
+    winMusic.currentTime = 0;
+    winMusic.play();
+  }
+  startFireworksBg();
+}
+function drawGameOver() {
+  gameOver = true;
+  document.getElementById("gameOverText").style.display = "block";
+  gameOverSound.play();
+  stopFireworksBg();
+}
+
+function draw() {
+  if (isPaused || gameOver || gameWon) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBricks();
+  balls.forEach(drawBall);
+  drawPaddle();
+  updateStats();
+  drawParticles();
+  drawPowerups();
+
+  for (const p of powerups) {
+    p.y += 3;
+  }
+  checkPowerupCollision();
+
+  for (let i = balls.length - 1; i >= 0; i--) {
+    const ball = balls[i];
+    for (let c = 0; c < brickColumnCount; c++) {
+      for (let r = 0; r < brickRowCount; r++) {
+        const b = bricks[c][r];
+        if (b.status > 0) {
+          const hit = (
+            ball.x + ballRadius > b.x &&
+            ball.x - ballRadius < b.x + brickWidth &&
+            ball.y + ballRadius > b.y &&
+            ball.y - ballRadius < b.y + brickHeight
+          );
+
+          if (ball.type === "pink" && hit) {
+            if (b.type === "indestructible") {
+              const prevX = ball.x - ball.dx;
+              const prevY = ball.y - ball.dy;
+              if (prevY + ballRadius <= b.y || prevY - ballRadius >= b.y + brickHeight) {
+                ball.dy = -ball.dy;
+              } else {
+                ball.dx = -ball.dx;
+              }
+              continue;
+            } else {
+              b.status = 0;
+              score++;
+              brickHits++;
+              createParticles(ball.x, ball.y, b.color);
+              plumSound.currentTime = 0;
+              plumSound.play();
+              if (brickHits % POWERUP_DROP_INTERVAL === 0) {
+                const powerupX = b.x + brickWidth / 2 - POWERUP_WIDTH / 2;
+                const powerupY = b.y + brickHeight / 2 - POWERUP_HEIGHT / 2;
+                powerups.push({ x: powerupX, y: powerupY, type: POWERUP_TYPE_PADDLE });
+              }
+              if (brickHits % POWERDOWN_DROP_INTERVAL === Math.floor(POWERDOWN_DROP_INTERVAL/2)) {
+                const powerdownX = b.x + brickWidth / 2 - POWERUP_WIDTH / 2;
+                const powerdownY = b.y + brickHeight / 2 - POWERUP_HEIGHT / 2;
+                powerups.push({ x: powerdownX, y: powerdownY, type: POWERDOWN_TYPE_PADDLE });
+              }
+              if (brickHits % 10 === 0) {
+                balls.push({ x: canvas.width/2, y: canvas.height-30, dx: 3, dy: -3, type: "normal" });
+              }
+              if (brickHits % 25 === 0) {
+                balls.push({ x: canvas.width/2, y: canvas.height-30, dx: 4, dy: -4, type: "pink" });
+              }
+            }
+          }
+          else if (hit) {
+            if (b.type !== "indestructible") {
+              b.hits--;
+              if (b.hits <= 0) {
+                b.status = 0;
+                score++;
+                brickHits++;
+                createParticles(ball.x, ball.y, b.color);
+                plumSound.currentTime = 0;
+                plumSound.play();
+                if (brickHits % POWERUP_DROP_INTERVAL === 0) {
+                  const powerupX = b.x + brickWidth / 2 - POWERUP_WIDTH / 2;
+                  const powerupY = b.y + brickHeight / 2 - POWERUP_HEIGHT / 2;
+                  powerups.push({ x: powerupX, y: powerupY, type: POWERUP_TYPE_PADDLE });
+                }
+                if (brickHits % POWERDOWN_DROP_INTERVAL === Math.floor(POWERDOWN_DROP_INTERVAL/2)) {
+                  const powerdownX = b.x + brickWidth / 2 - POWERUP_WIDTH / 2;
+                  const powerdownY = b.y + brickHeight / 2 - POWERUP_HEIGHT / 2;
+                  powerups.push({ x: powerdownX, y: powerdownY, type: POWERDOWN_TYPE_PADDLE });
+                }
+                if (brickHits % 10 === 0) {
+                  balls.push({ x: canvas.width/2, y: canvas.height-30, dx: 3, dy: -3, type: "normal" });
+                }
+                if (brickHits % 25 === 0) {
+                  balls.push({ x: canvas.width/2, y: canvas.height-30, dx: 4, dy: -4, type: "pink" });
+                }
+              }
+              const prevX = ball.x - ball.dx;
+              const prevY = ball.y - ball.dy;
+              if (prevY + ballRadius <= b.y || prevY - ballRadius >= b.y + brickHeight) {
+                ball.dy = -ball.dy;
+              } else {
+                ball.dx = -ball.dx;
+              }
+            } else {
+              const prevX = ball.x - ball.dx;
+              const prevY = ball.y - ball.dy;
+              if (prevY + ballRadius <= b.y || prevY - ballRadius >= b.y + brickHeight) {
+                ball.dy = -ball.dy;
+              } else {
+                ball.dx = -ball.dx;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (ball.x + ball.dx > canvas.width - ballRadius || ball.x + ball.dx < ballRadius) ball.dx = -ball.dx;
+    if (ball.y + ball.dy < ballRadius) ball.dy = -ball.dy;
+    else if (ball.y + ball.dy > canvas.height - ballRadius) {
+      if (ball.x > paddleX && ball.x < paddleX + paddleWidth) {
+        ball.dy = -ball.dy;
+      } else {
+        balls.splice(i, 1);
+        if (balls.length === 0) {
+          lives--;
+          updateStats();
+          if (!lives) drawGameOver();
+          else balls.push({ x: canvas.width/2, y: canvas.height-30, dx: 3, dy: -3, type: "normal" });
+        }
+      }
+    }
+
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+  }
+
+  if (rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 7;
+  else if (leftPressed && paddleX > 0) paddleX -= 7;
+
+  if (!gameWon && !gameOver && !areBreakableBricksLeft()) {
+    drawWin();
+    return;
+  }
+
+  requestAnimationFrame(draw);
+}
+
+function simulateWin() {
+  if (gameOver || gameWon) return;
+  for (let c = 0; c < brickColumnCount; c++) {
+    for (let r = 0; r < brickRowCount; r++) {
+      if (bricks[c][r].type !== "indestructible") {
+        bricks[c][r].status = 0;
+      }
+    }
+  }
+  drawWin();
+}
+
+draw();
+</script>
+</body>
+</html>
